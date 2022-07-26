@@ -18,12 +18,13 @@ body {
 
 input,
 textarea,
-button,
 select {
 	font: inherit;
 	margin-bottom: 1em;
 }
-
+button {
+  font: inherit;
+}
 header {
 	padding: 1rem;
 	display: flex;
@@ -37,7 +38,8 @@ header {
 
 nav {
 	display: flex;
-	justify-content: flex-end;
+  align-items: center;
+
 }
 
 nav ul {
