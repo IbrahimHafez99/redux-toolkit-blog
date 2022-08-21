@@ -1,16 +1,25 @@
-import { createSlice, nanoid, createAsyncThunk, createSelector } from "@reduxjs/toolkit";
+import { createSlice, nanoid, createAsyncThunk, createSelector, createEntityAdapter } from "@reduxjs/toolkit";
 import axios from "axios";
 import { sub } from "date-fns";
 const POST_URL = "https://jsonplaceholder.typicode.com/posts"
 
-const initialState = {
-  posts: [],
-  status: 'idle',
-  error: null,
-  postId: null,
-  requestStatus: null,
-  count: 0
-}
+const postsAdapter = createEntityAdapter({
+  // Assume IDs are stored in a field other than 'post.id'
+  // we would do this: selectId: (post) => post.postId,
+  selectId: (post) => post.id,
+  // Keep the "all IDs" array sorted based on post date
+  sortComparer: (a, b) => b.date.localeCompare(a.date) // a sort function() which is equal to sort((a, b) => b.date.localeCompare(a.date))
+})
+
+const initialState = postsAdapter.getInitialState(
+  {
+    status: 'idle',
+    error: null,
+    postId: null,
+    requestStatus: null,
+    count: 0
+  }
+)
 
 export const fetchPosts = createAsyncThunk('posts/fetchPosts', async () => {
   try {
@@ -66,6 +75,7 @@ const postsSlice = createSlice({
       reducer(state, action) {
         state.posts.push(action.payload)
       },
+      //Customizing Generated Action Creators:
       //it has to be prepare because its a callback function that prepare the payload that is within the action before mutating the state
       prepare(title, content, userId) {
         return {
@@ -91,12 +101,15 @@ const postsSlice = createSlice({
     },
     reactionAdded(state, action) {
       const { postId, reaction } = action.payload
-      const existingPost = state.posts.find(post => post.id === postId)
+      // const existingPost = state.posts.find(post => post.id === postId)
+
+      //this made the search operation much easier with O(1) Access complexity *thanks to the lookup table* instead of the above approach
+      const existingPost = state.entities[postId]
       if (existingPost) {
         existingPost.reactions[reaction]++
       }
     },
-    increaseCount(state, action) {
+    increaseCount(state) {
       state.count = state.count + 1
     }
   },
@@ -119,7 +132,10 @@ const postsSlice = createSlice({
           }
           return post
         })
-        state.posts = [...state.posts, ...loadedPosts]
+        // Add any fetched posts to the array
+        postsAdapter.upsertMany(state, loadedPosts)
+
+        // state.posts = [...state.posts, ...loadedPosts]
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.status = 'failed'
@@ -138,7 +154,8 @@ const postsSlice = createSlice({
         }
         state.postId = action.payload.id
         state.requestStatus = 200
-        state.posts.push(action.payload)
+        // state.posts.push(action.payload)
+        postsAdapter.addOne(state, action.payload)
       })
       .addCase(updatePost.fulfilled, (state, action) => {
         if (!action.payload?.id) {
@@ -146,10 +163,12 @@ const postsSlice = createSlice({
           console.log(action.payload);
           return;
         }
-        const { id } = action.payload
         action.payload.date = new Date().toISOString()
-        const posts = state.posts.filter(post => post.id !== id)
-        state.posts = [...posts, action.payload]
+        // const { id } = action.payload
+        // const posts = state.posts.filter(post => post.id !== id)
+        // state.posts = [...posts, action.payload]
+        postsAdapter.upsertOne(state, action.payload)
+
       })
       .addCase(deletePost.fulfilled, (state, action) => {
         if (!action.payload?.id) {
@@ -157,17 +176,25 @@ const postsSlice = createSlice({
           console.log(action.payload)
           return;
         }
-        const { id } = action.payload;
-        state.posts = state.posts.filter(post => post.id !== id)
+        // const { id } = action.payload;
+        // state.posts = state.posts.filter(post => post.id !== id)
+        postsAdapter.removeOne(state, action.payload.id)
       })
   },
 })
+// export const selectAllPosts = state => state.posts
+// export const selectPostById = (state, postId) => state.posts.posts.find(post => (post.id === postId || post.id === Number(postId)))
+
+//createEntityAdapter provdies a getSelectors function which creates selectors that corresponde to the normalized state
+export const {
+  selectAll: selectAllPosts,
+  selectById: selectPostById,
+  selectIds: selectPostIds
+} = postsAdapter.getSelectors(state => state.posts)
 
 export const getPostsStatus = state => state.posts.status
 export const getPostsError = state => state.posts.error
 export const getCount = state => state.posts.count
-export const selectAllPosts = state => state.posts.posts
-export const selectPostById = (state, postId) => state.posts.posts.find(post => (post.id === postId || post.id === Number(postId)))
 
 export const selectPostsByUser = createSelector(
   [selectAllPosts, (state, userId) => userId],
@@ -176,4 +203,27 @@ export const selectPostsByUser = createSelector(
 
 
 export const { postAdded, reactionAdded, resetRequestStatus, increaseCount } = postsSlice.actions
+
 export default postsSlice.reducer
+
+//Normalized State Shape
+
+// {
+//   posts: {
+//     ids: [1, 2, 3, ...],
+//     entities: {
+//       '1': {
+//         userId: 1,
+//         id: 1,
+//         title: ...
+//         etc,
+//       },
+//       '2': {
+//         userId: 2,
+//         id: 2,
+//         title: ...
+//         etc,
+//       }
+//     }
+//   }
+// }

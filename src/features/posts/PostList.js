@@ -1,10 +1,11 @@
 import React from 'react'
 import { useSelector } from "react-redux";
-import { selectAllPosts, getPostsStatus, getPostsError } from './postsSlice';
+import { selectPostIds, getPostsStatus, getPostsError } from './postsSlice';
 import PostsExcerpt from './PostsExcerpt';
 const PostList = () => {
-  const posts = useSelector(state => selectAllPosts(state))
+  const orderedPostIds = useSelector(selectPostIds)
   const postsStatus = useSelector(getPostsStatus)
+  //the above selectors is equal to this below, the state param get inherited by the get getPostsStatus function automatically
   const postsError = useSelector(state => getPostsError(state))
 
 
@@ -12,9 +13,8 @@ const PostList = () => {
   if (postsStatus === 'loading') {
     content = <p>Loading...</p>
   } else if (postsStatus === 'succeeded') {
-    const orderedPosts = posts.slice().sort((a, b) => b.date.localeCompare(a.date))
-    content = orderedPosts.map(post => {
-      return <PostsExcerpt key={post.id} post={post} />
+    content = orderedPostIds.map(postId => {
+      return <PostsExcerpt key={postId} postId={postId} />
     })
   } else if (postsStatus === 'failed') {
     content = <p>{postsError}</p>
