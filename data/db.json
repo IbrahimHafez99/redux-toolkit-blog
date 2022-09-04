@@ -285,7 +285,14 @@
       "userId": 2,
       "id": 11,
       "title": "et ea vero quia laudantium autem",
-      "body": "delectus reiciendis molestiae occaecati non minima eveniet qui voluptatibus\naccusamus in eum beatae sit\nvel qui neque voluptates ut commodi qui incidunt\nut animi commodi"
+      "body": "delectus reiciendis molestiae occaecati non minima eveniet qui voluptatibus\naccusamus in eum beatae sit\nvel qui neque voluptates ut commodi qui incidunt\nut animi commodi",
+      "reactions": {
+        "thumbsUp": 1,
+        "wow": 1,
+        "heart": 0,
+        "rocket": 1,
+        "coffee": 0
+      }
     },
     {
       "userId": 2,
@@ -297,13 +304,27 @@
       "userId": 2,
       "id": 14,
       "title": "voluptatem eligendi optio",
-      "body": "fuga et accusamus dolorum perferendis illo voluptas\nnon doloremque neque facere\nad qui dolorum molestiae beatae\nsed aut voluptas totam sit illum"
+      "body": "fuga et accusamus dolorum perferendis illo voluptas\nnon doloremque neque facere\nad qui dolorum molestiae beatae\nsed aut voluptas totam sit illum",
+      "reactions": {
+        "thumbsUp": 1,
+        "wow": 0,
+        "heart": 0,
+        "rocket": 0,
+        "coffee": 0
+      }
     },
     {
       "userId": 2,
       "id": 15,
       "title": "eveniet quod temporibus",
-      "body": "reprehenderit quos placeat\nvelit minima officia dolores impedit repudiandae molestiae nam\nvoluptas recusandae quis delectus\nofficiis harum fugiat vitae"
+      "body": "reprehenderit quos placeat\nvelit minima officia dolores impedit repudiandae molestiae nam\nvoluptas recusandae quis delectus\nofficiis harum fugiat vitae",
+      "reactions": {
+        "thumbsUp": 0,
+        "wow": 4,
+        "heart": 0,
+        "rocket": 0,
+        "coffee": 0
+      }
     },
     {
       "userId": 2,

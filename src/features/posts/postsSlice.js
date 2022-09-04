@@ -107,7 +107,7 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
         { type: 'Post', id: arg.id }
       ]
     }),
-    //we don't want to reload our list everytime we add a reaction so we're going this in an optimistic update approach
+    //we don't want to reload our list everytime we add a reaction so we're going this in an optimistic update approach (update our cache locally and if an error happens we undo it so we optimistically update the cache)
     addReaction: builder.mutation({
       query: ({ postId, reactions }) => ({
         url: `posts/${postId}`,
@@ -137,17 +137,22 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
   }),
 })
 
+// this is an optimistic update so inside the patchResult we're updating our cache and that is happening before the data at the api (this api) has been updated (before initiating the query to PATCH the new reactions)
+
+//ATTENTION: we're not using invalidateTags in addReaction and that because we don't want to refetch the list every time a reaction is added but rather we update our cache locally and if an error happens we undo it so we optimistically update the cache
+
+
 export const {
   useGetPostsQuery,
   useGetPostsByUserIdQuery,
   useAddNewPostMutation,
   useUpdatePostMutation,
   useDeletePostMutation,
+  useAddReactionMutation,
 } = extendedApiSlice
 
 //this selector returns the query result object, it doesn't issue the query but it returns the result object that we already have after the query was triggered
 const selectPostsResult = extendedApiSlice.endpoints.getPosts.select()
-
 //create a memoized selector
 const selectPostsData = createSelector(selectPostsResult, postsResult => postsResult.data)
 //createEntityAdapter provdies a getSelectors function which creates memoized selectors that corresponde to the normalized state
