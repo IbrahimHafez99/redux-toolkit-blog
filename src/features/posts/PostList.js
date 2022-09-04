@@ -4,6 +4,7 @@ import { selectPostIds, getPostsStatus, getPostsError } from './postsSlice';
 import PostsExcerpt from './PostsExcerpt';
 const PostList = () => {
   const orderedPostIds = useSelector(selectPostIds)
+  console.log(orderedPostIds);
   const postsStatus = useSelector(getPostsStatus)
   //the above selectors is equal to this below, the state param get inherited by the get getPostsStatus function automatically
   const postsError = useSelector(state => getPostsError(state))
