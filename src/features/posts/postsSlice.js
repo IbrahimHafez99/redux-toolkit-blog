@@ -106,6 +106,33 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: 'Post', id: arg.id }
       ]
+    }),
+    //we don't want to reload our list everytime we add a reaction so we're going this in an optimistic update approach
+    addReaction: builder.mutation({
+      query: ({ postId, reactions }) => ({
+        url: `posts/${postId}`,
+        method: 'PATCH',
+        body: { reactions }
+      }),
+      //queryFulfilled is a promise
+      onQueryStarted: async ({ postId, reactions }, { dispatch, queryFulfilled }) => {
+        //'updateQueryData' requires the endpoint name and cache key arguments so it knows which piece of cache state to update.
+        const patchResult = dispatch(
+          extendedApiSlice.util.updateQueryData('getPosts', undefined, draft => {
+            //the draft is an immer-wrapper and can be mutated like reducers mutating the state in createSlice
+            //draft is like the state (the cached state)
+            const post = draft.entities[postId]
+            if (post) post.reactions = reactions
+
+          })
+        )
+        try {
+          await queryFulfilled
+        }
+        catch {
+          patchResult.undo()
+        }
+      }
     })
   }),
 })

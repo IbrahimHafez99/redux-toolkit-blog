@@ -25,10 +25,10 @@ const UserPage = () => {
   }
   return (
     <section>
-      < h2>
+      <h2>
         {user?.name}
         <ol>{content}</ol>
-      </>
+      </h2>
     </section>
   )
 }

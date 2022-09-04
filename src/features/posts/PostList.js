@@ -25,7 +25,6 @@ const PostList = () => {
   } else if (isError) {
     content = <p>{error}</p>
   }
-
   return (
     <section>
       {content}
