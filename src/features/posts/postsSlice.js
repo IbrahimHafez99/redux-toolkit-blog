@@ -18,7 +18,7 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
       transformResponse: responseData => {
         let min = 1
         const loadedPosts = responseData.map(post => {
-          if (!post?.date) post.date = sub(new Date(), { minutes: min })
+          if (!post?.date) post.date = sub(new Date(), { minutes: min++ }).toISOString()
           if (!post.reactions) post.reactions = {
             thumbsUp: 0,
             wow: 0,
@@ -31,24 +31,101 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
         return postsAdapter.setAll(initialState, loadedPosts)
       },
       //its providing this tag of Post and we need to invalidate the post cache when we use the builder mutations
+      //this { type: 'Post', id: 'LIST' } is a unique Tag and this  id: 'LIST' is a unique Identifier that allow us to invalidate the all post cached state in other mutation, ...result.ids.map(id => ({ type: 'Post', id }) this allow us to invalidate cached state and refetch all posts if any of the posts changes
       providesTags: (result, error, arg) => [
         { type: 'Post', id: 'LIST' },
         ...result.ids.map(id => ({ type: 'Post', id }))
       ]
     }),
+    getPostsByUserId: builder.query({
+      query: id => `/posts/?userId=${id}`,
+      transformResponse: responseData => {
+        let min = 1
+        const loadedPost = responseData.map(post => {
+          if (!post?.date) post.date = sub(new Date(), { minutes: min++ }).toISOString()
+          if (!post.reactions) post.reactions = {
+            thumbsUp: 0,
+            wow: 0,
+            heart: 0,
+            rocket: 0,
+            coffee: 0,
+          }
+          return post
+        })
+        //this doesn't override the cache of the full post list because redux is subscribing to those different queries because now this will have a cache state for this specific query as well and with post adapter we are normalizing the state.
+        return postsAdapter.setAll(initialState, loadedPost)
+      },
+      providesTags: (result, error, arg) => [
+        ...result.ids.map(id => ({ type: 'Post', id }))
+      ]
+    }),
+    addNewPost: builder.mutation({
+      query: initialPost => ({
+        url: '/posts',
+        method: 'POST',
+        body: {
+          ...initialPost,
+          userId: Number(initialPost.userId),
+          reactions: {
+            thumbsUp: 0,
+            wow: 0,
+            heart: 0,
+            rocket: 0,
+            coffee: 0,
+          }
+        }
+      }),
+      invalidatesTags: [
+        { type: 'Post', id: 'LIST' }
+      ]
+    }),
+    updatePost: builder.mutation({
+      query: initialPost => ({
+        url: `/posts/${initialPost.id}`,
+        method: 'PUT',
+        body: {
+          ...initialPost,
+          date: new Date().toISOString()
+        }
+      }),
+      //result === the response coming from the current http request
+      //arg === initialPost
+
+      invalidatesTags: (result, error, arg) => [
+        { type: 'Post', id: arg.id }
+      ]
+    }),
+    deletePost: builder.mutation({
+      //this is the arg { id }
+      query: ({ id }) => ({
+        url: `/posts/${id}`,
+        method: 'DELETE',
+        body: { id }
+      }),
+      //can i invalidate the list tag !?!?!?! need to test it when I'm finished
+      invalidatesTags: (result, error, arg) => [
+        { type: 'Post', id: arg.id }
+      ]
+    })
   }),
 })
 
 export const {
-  useGetPostsQuery
+  useGetPostsQuery,
+  useGetPostsByUserIdQuery,
+  useAddNewPostMutation,
+  useUpdatePostMutation,
+  useDeletePostMutation,
 } = extendedApiSlice
 
 //this selector returns the query result object, it doesn't issue the query but it returns the result object that we already have after the query was triggered
 const selectPostsResult = extendedApiSlice.endpoints.getPosts.select()
 
+//create a memoized selector
+const selectPostsData = createSelector(selectPostsResult, postsResult => postsResult.data)
 //createEntityAdapter provdies a getSelectors function which creates memoized selectors that corresponde to the normalized state
 export const {
   selectAll: selectAllPosts,
   selectById: selectPostById,
   selectIds: selectPostIds
-} = postsAdapter.getSelectors(state => state.posts)
+} = postsAdapter.getSelectors(state => selectPostsData(state) ?? initialState)
